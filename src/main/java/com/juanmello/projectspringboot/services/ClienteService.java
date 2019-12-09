@@ -16,11 +16,14 @@ import org.springframework.stereotype.Service;
 import com.juanmello.projectspringboot.domain.Cidade;
 import com.juanmello.projectspringboot.domain.Cliente;
 import com.juanmello.projectspringboot.domain.Endereco;
+import com.juanmello.projectspringboot.domain.enums.Perfil;
 import com.juanmello.projectspringboot.domain.enums.TipoCliente;
 import com.juanmello.projectspringboot.dto.ClienteDTO;
 import com.juanmello.projectspringboot.dto.ClienteNewDTO;
 import com.juanmello.projectspringboot.repositories.ClienteRepository;
 import com.juanmello.projectspringboot.repositories.EnderecoRepository;
+import com.juanmello.projectspringboot.security.UserSS;
+import com.juanmello.projectspringboot.services.exception.AuthorizationException;
 import com.juanmello.projectspringboot.services.exception.DataIntegrityException;
 import com.juanmello.projectspringboot.services.exception.ObjectNotFoundException;
 
@@ -37,6 +40,11 @@ public class ClienteService {
 	private BCryptPasswordEncoder pe;
 	
 	public Cliente find(Integer id) {
+		UserSS user = UserService.authenticated();
+		if (user==null || !user.hasRole(Perfil.ADMIN) && !id.equals(user.getId())) {
+			throw new AuthorizationException("Acesso negado");
+		}
+		
 		Optional<Cliente> obj = repo.findById(id);
 		return obj.orElseThrow(() -> new ObjectNotFoundException(
 				"Objeto não encontrado! Id: " + id + ", Tipo: " + Cliente.class.getName()));
